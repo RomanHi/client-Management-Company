@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class Tv7SensorInfo {
+public class TV7SensorInfo extends BaseSensorInfo {
     private int type;
     private double softwareVersion;
     private double sensorVersion;

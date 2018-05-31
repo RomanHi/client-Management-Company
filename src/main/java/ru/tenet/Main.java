@@ -1,25 +1,57 @@
 package ru.tenet;
 
 
-import java.util.Arrays;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import ru.tenet.handlers.ClientHandler;
+import ru.tenet.handlers.GetSensorInfoHandler;
+import ru.tenet.model.SensorType;
+
+import java.net.InetSocketAddress;
 
 public class Main {
-    public static void main(String[] args)  {
-        int test[] = {0x83, 0x13, 0x3f, 0xfc, 0x10, 0x10};
-        char pars[] = new char[100];
-        byte b[] = new byte[test.length];
-        for (int i = 0; i < test.length; i++) {
-            b[i] = (byte) test[i];
-        }
+    private final String host;
+    private final int port;
 
-//        System.out.println(new String(b, "Cp866"));
-        System.out.println(new String(b));
-        System.out.println(Byte.toUnsignedInt((byte) -12));
-        System.out.println();
-        System.out.println(Arrays.toString(b));
-        System.out.println(Integer.toHexString(crc16(b)));
-
+    public Main(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
+
+    public void start() throws Exception {
+        EventLoopGroup group = new NioEventLoopGroup();
+        try {
+            Bootstrap b = new Bootstrap();
+
+            b.group(group)
+                    .channel(NioSocketChannel.class)
+                    .remoteAddress(new InetSocketAddress(host, port))
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        public void initChannel(SocketChannel ch)
+                                throws Exception {
+                            ch.pipeline().addLast(
+                                    new GetSensorInfoHandler(SensorType.TV7));
+                        }
+                    });
+            ChannelFuture f = b.connect().sync();
+            f.channel().closeFuture().sync();
+        } finally {
+            group.shutdownGracefully().sync();
+        }
+    }
+    public static void main(String[] args) throws Exception {
+        String host ="127.0.0.1";
+        int port = 8080;
+        Main main = new Main(host, port);
+        main.start();
+    }
+
 
     static int crc16(final byte[] buffer) {
         int crc = 0xFFFF;
