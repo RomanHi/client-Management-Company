@@ -4,21 +4,30 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import ru.tenet.model.BaseSensorInfo;
 import ru.tenet.model.SensorType;
-import ru.tenet.model.TV7SensorInfo;
-import ru.tenet.services.SensorService;
+import ru.tenet.services.SensorInfoService;
+
+import java.util.Arrays;
 
 public class GetSensorInfoHandler extends SimpleChannelInboundHandler<ByteBuf> {
-    private SensorService sensorService;
+    private SensorInfoService sensorInfoService;
 
     public GetSensorInfoHandler(SensorType sensorType) {
-        sensorService= new SensorService(sensorType);
+        sensorInfoService = new SensorInfoService(sensorType);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        byte[] request = sensorService.getRequest();
+        byte[] request = sensorInfoService.getRequest();
+        System.out.println("send request:");
+        System.out.println(Arrays.toString(request));
         ctx.writeAndFlush(Unpooled.copiedBuffer(request));
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        super.channelReadComplete(ctx);
     }
 
     @Override
@@ -26,10 +35,12 @@ public class GetSensorInfoHandler extends SimpleChannelInboundHandler<ByteBuf> {
         short[] response = new short[byteBuf.readableBytes()];
         int i = 0;
         while (byteBuf.isReadable()) {
-            response[i]=byteBuf.readUnsignedByte();
+            response[i] = byteBuf.readUnsignedByte();
             i++;
         }
-        TV7SensorInfo sensorInfo = (TV7SensorInfo) sensorService.parseResponse(response);
+        BaseSensorInfo sensorInfo = sensorInfoService.parseResponse(response);
+        System.out.println("get response:");
+        System.out.println(Arrays.toString(response));
         System.out.println(sensorInfo);
     }
 

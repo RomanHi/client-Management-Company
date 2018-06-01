@@ -1,19 +1,20 @@
 package ru.tenet.services;
 
+import io.netty.buffer.ByteBufUtil;
 import ru.tenet.model.BaseSensorInfo;
 import ru.tenet.model.SensorType;
 import ru.tenet.model.TV7SensorInfo;
+import ru.tenet.model.VKT7SensorInfo;
 import ru.tenet.utility.Converter;
 
-public class SensorService {
-    //TV7
+public class SensorInfoService {
     private final int TV7_INDEX_LONG_RESPONSE = 5;
     private final int TV7_START_DATA_INDEX = 9;
     private final int VKT7_START_DATA_INDEX = 9;
 
     private SensorType sensorType;
 
-    public SensorService(SensorType sensorType) {
+    public SensorInfoService(SensorType sensorType) {
         this.sensorType = sensorType;
     }
 
@@ -48,9 +49,9 @@ public class SensorService {
         return null;
     }
 
-    //TODO Correct parse scheme measure according doc pg 17
+    //TODO Write correct parser scheme measure according doc pg 17
     private BaseSensorInfo parseVKT7(short[] res) {
-        int index =VKT7_START_DATA_INDEX;
+        int index = VKT7_START_DATA_INDEX;
 
         double softwareVersion;
         int schemaMeasuring1;
@@ -61,11 +62,34 @@ public class SensorService {
         int model;
 
         softwareVersion = Converter.mergeOneByteToDouble(res[index]);
-        return null;
+        index++;
+        schemaMeasuring1 = res[index] + res[index + 1];
+        index += 2;
+        schemaMeasuring2 = res[index] + res[index + 1];
+        index += 2;
+        subscriberId = res[index];
+        index++;
+        networkNumber = res[index];
+        index++;
+        date = res[index];
+        index++;
+        model = res[index];
+
+        return VKT7SensorInfo.builder()
+                .date(date)
+                .model(model)
+                .networkNumber(networkNumber)
+                .schemaMeasuring1(schemaMeasuring1)
+                .schemaMeasuring2(schemaMeasuring2)
+                .softwareVersion(softwareVersion)
+                .subscriberId(subscriberId).build();
     }
 
-    private BaseSensorInfo parseTV7(short[] res) {
-        if (res[TV7_INDEX_LONG_RESPONSE] != 13) {
+
+    //TODO Make check for correct incoming param. Make some beauty
+    private BaseSensorInfo parseTV7(short[] res) throws IllegalStateException {
+
+        if (res.length < 23 || res[TV7_INDEX_LONG_RESPONSE] != 17) {
             throw new IllegalStateException("unexpected response");
         }
         int index = TV7_START_DATA_INDEX;
@@ -80,18 +104,24 @@ public class SensorService {
 
         type = Converter.mergeTwoByteToInt(res[index], res[index + 1]);
         index += 2;
+
         softwareVersion = Converter.mergeTwoByteToDouble(res[index], res[index + 1]);
         index += 2;
+
         sensorVersion = Converter.mergeTwoByteToDouble(res[index], res[index + 1]);
         index += 2;
+
         softwareChecksum = Converter.mergeTwoByteToInt(res[index], res[index + 1]);
-        index++;
+        index += 2;
+
         model = res[index];
         index++;
-        reserve = res[index];
 
-        //TODO Parse 4 index in long?
-        serialNumber = res[index] + res[index + 1] + res[index + 2] + res[index + 3];
+        reserve = res[index];
+        index++;
+
+        String hexDump = ByteBufUtil.hexDump(new byte[]{(byte) res[index], (byte) res[index + 1], (byte) res[index + 2], (byte) res[index + 3]});
+        serialNumber = Long.decode("0x"+hexDump);
 
         return TV7SensorInfo.builder()
                 .type(type)
