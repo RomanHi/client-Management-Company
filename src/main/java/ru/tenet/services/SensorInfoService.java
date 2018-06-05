@@ -8,9 +8,6 @@ import ru.tenet.model.VKT7SensorInfo;
 import ru.tenet.utility.Converter;
 
 public class SensorInfoService {
-    private final int TV7_INDEX_LONG_RESPONSE = 5;
-    private final int TV7_START_DATA_INDEX = 9;
-    private final int VKT7_START_DATA_INDEX = 9;
 
     private SensorType sensorType;
 
@@ -51,7 +48,7 @@ public class SensorInfoService {
 
     //TODO Write correct parser scheme measure according doc pg 17
     private BaseSensorInfo parseVKT7(short[] res) {
-        int index = VKT7_START_DATA_INDEX;
+        int index = 0;
 
         double softwareVersion;
         int schemaMeasuring1;
@@ -85,14 +82,9 @@ public class SensorInfoService {
                 .subscriberId(subscriberId).build();
     }
 
-
-    //TODO Make check for correct incoming param. Make some beauty
     private BaseSensorInfo parseTV7(short[] res) throws IllegalStateException {
 
-        if (res.length < 23 || res[TV7_INDEX_LONG_RESPONSE] != 17) {
-            throw new IllegalStateException("unexpected response");
-        }
-        int index = TV7_START_DATA_INDEX;
+        int index = 0;
 
         int type;
         double softwareVersion;

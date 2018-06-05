@@ -15,7 +15,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         byte[] request = {0x01, 0x03, 0x00, (byte) 0x87};
         ctx.writeAndFlush(Unpooled.copiedBuffer(request));
-        System.out.println("send request:");
+        System.out.println("send request: ");
         System.out.println(Arrays.toString(request));
     }
 
@@ -33,6 +33,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
             response[i]=byteBuf.readUnsignedByte();
             i++;
         }
+
         System.out.println("get response:");
         System.out.println(Arrays.toString(response));
     }

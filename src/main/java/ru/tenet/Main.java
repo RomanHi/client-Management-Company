@@ -8,6 +8,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.log4j.Logger;
 import ru.tenet.handlers.ClientHandler;
 import ru.tenet.handlers.GetSensorInfoHandler;
 import ru.tenet.model.SensorType;
@@ -15,6 +16,7 @@ import ru.tenet.model.SensorType;
 import java.net.InetSocketAddress;
 
 public class Main {
+    final static Logger logger = Logger.getLogger(Main.class);
     private final String host;
     private final int port;
 
@@ -40,16 +42,21 @@ public class Main {
                         }
                     });
             ChannelFuture f = b.connect().sync();
+            logger.info("service connected");
             f.channel().closeFuture().sync();
+            logger.info("ending transmit");
         } finally {
             group.shutdownGracefully().sync();
+            logger.info("service shutdown");
         }
     }
     public static void main(String[] args) throws Exception {
         String host ="127.0.0.1";
         int port = 8080;
         Main main = new Main(host, port);
+        logger.info("service started");
         main.start();
+        logger.info("service end");
     }
 
 

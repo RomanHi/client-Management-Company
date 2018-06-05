@@ -6,10 +6,11 @@ import ru.tenet.model.SensorType;
 import ru.tenet.model.TV7SensorInfo;
 import ru.tenet.model.VKT7SensorInfo;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class SensorInfoServiceTest {
+    private SensorInfoService service;
+
 
     @Test
     public void getRequest() {
@@ -19,19 +20,29 @@ public class SensorInfoServiceTest {
 
         byte[] expectedVKT7 = new byte[]{0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x03, 0x3f, (byte) 0xf9, 0x00, 0x00};
         byte[] expectedTV7 = new byte[]{0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x03, 0x00, 0x00, 0x00, 0x05};
-        byte[] expectedMK5 = null;
+        byte[] expectedMK5 = null;//new byte[]{};
 
-        assertArrayEquals(expectedVKT7,vkt7.getRequest());
-        assertArrayEquals(expectedTV7,tv7.getRequest());
-        assertArrayEquals(expectedMK5,mk5.getRequest());
+        assertArrayEquals(expectedVKT7, vkt7.getRequest());
+        assertArrayEquals(expectedTV7, tv7.getRequest());
+        assertArrayEquals(expectedMK5, mk5.getRequest());
+
+        byte number = 125;
+        for (int i = 7; i >= 0; i--) {
+            if (((1 << i) & number) != 0) {
+                System.out.print(1);
+            } else {
+                System.out.print(0);
+            }
+
+        }
 
     }
 
     @Test
     public void parseResponseForVKT7ExpectedNewCorrectVKTSensorInfo() {
-        short[] goodResponse = new short[]{0x00, 0x01, 0x00, 0x00, 0x00, 0x11, 0x0e, //headers and slaveId(last byte)
-                0x03, 0x09,0x18,0x25,0x25,0x25,0x25,'c',0x0a,0x0e,0x30};
-        SensorInfoService service = new SensorInfoService(SensorType.VKT7);
+        short[] goodResponse = new short[]{0x18, 0x25, 0x25, 0x25, 0x25, 'c', 0x0a, 0x0e, 0x30};
+
+        service = new SensorInfoService(SensorType.VKT7);
         VKT7SensorInfo expected = VKT7SensorInfo.builder()
                 .softwareVersion(1.8)
                 .schemaMeasuring1(37 + 37)
@@ -42,17 +53,14 @@ public class SensorInfoServiceTest {
                 .model(0x30).build();
 
         VKT7SensorInfo result = (VKT7SensorInfo) service.parseResponse(goodResponse);
-        assertEquals(expected,result);
+        assertEquals(expected, result);
         System.out.println(result);
     }
 
     @Test
     public void parseResponseForTV7ExpectedNewCorrectTV7SensorInfo() {
-        short[] goodResponse = new short[]{0x00, 0x01, 0x00, 0x00, 0x00, 0x11, 0x0e, //headers and slaveId(last byte)
-                0x03, 0x0e, 0x17, 0x02, 0x02, 0x08, 0x01, 0x08, 0x81, 0x08, 0x03, 0x05, 0xFF, 0xFF, 0xFF, 0xFF};
-        short[] badResponse = new short[]{0x02, 0x08, 0x01, 0x08, 0x81, 0x08};
-        byte[] b = new byte[]{0x02, 0x08, 0x01, 0x08, (byte) 0x81, 0x08};
-        SensorInfoService service = new SensorInfoService(SensorType.TV7);
+        short[] goodResponse = new short[]{0x17, 0x02, 0x02, 0x08, 0x01, 0x08, 0x81, 0x08, 0x03, 0x05, 0xFF, 0xFF, 0xFF, 0xFF};
+        service = new SensorInfoService(SensorType.TV7);
         TV7SensorInfo expected = TV7SensorInfo.builder()
                 .type(5890)
                 .softwareVersion(2.8)
@@ -61,7 +69,6 @@ public class SensorInfoServiceTest {
                 .model(3)
                 .reserve(5)
                 .serialNumber(4294967295L).build();
-
 
 
         BaseSensorInfo result = service.parseResponse(goodResponse);
